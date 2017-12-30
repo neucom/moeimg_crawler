@@ -1,0 +1,44 @@
+#!/usr/bin/ruby
+
+# vim: ai ts=2 sts=2 et sw=2 ft=ruby
+
+require_relative 'lib/Datastore.rb'
+
+dbClient = Mysql2::Client.new(:host => '127.0.0.1', :port => 3306, :username => 'root', :password => 'database', :database => 'database')
+
+search_query = ARGV[0]
+
+# SQLを実行して返すだけ
+def selectSql (query)
+  dbClient = Mysql2::Client.new(:host => '127.0.0.1', :port => 3306, :username => 'root', :password => 'database', :database => 'database')
+  result = Array.new
+  
+  raw_result = dbClient.query( query)
+
+  raw_result.each do |row|
+    row_result = Hash.new
+    row.each do |key,value|
+      row_result[ key.to_sym] = value
+    end
+    result << row_result
+  end
+
+  return result
+end
+
+puts "<html><head></head><body>"
+
+result = selectSql(%q{SELECT title,url FROM post WHERE title LIKE '%}  + search_query + %q{%'})
+result.each do |row|
+  #puts row[:title] + " " + row[:url]
+  images = selectSql("SELECT image FROM sitepost WHERE url = '" + row[:url] + "'")
+  images.each do |image|
+    hash = image[:image]
+    fd_hash = hash.slice(0..1)
+    sd_hash = hash.slice(2..3)
+    path = "./tmp/" + fd_hash + "/" + sd_hash + "/" + hash + ".jpg"
+    puts "<a href='" + path + "'><img src='./tmp.jpg' data-original='" + path + "' class='lazyload' height='512px'/></a><br />"
+  end
+end
+
+puts "<script src='http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js'></script><script src='./lazyload.min.js'></script><script>$(function() {$(\"img.lazyload\").lazyload();});</script></body></html>"

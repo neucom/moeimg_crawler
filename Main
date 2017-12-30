@@ -1,0 +1,20 @@
+#!/usr/bin/ruby
+
+# vim: ai ts=2 sts=2 et sw=2 ft=ruby
+
+require_relative 'lib/Moeimg.rb'
+
+dbClient = Mysql2::Client.new(:host => '127.0.0.1', :port => 3306, :username => 'root', :password => 'database', :database => 'database')
+
+crawler = Moeimg.new
+newPosts = crawler.fetchIndex
+puts "starting fetch for " + newPosts.length.to_s + " posts."
+
+newPosts.each do |post|
+  p post
+  postDetail = crawler.getPost (post)
+  next if postDetail == -1
+  crawler.savePost( postDetail)
+  crawler.fetchPost( postDetail)
+  sleep 5
+end

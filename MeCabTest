@@ -1,0 +1,36 @@
+#!/usr/bin/ruby
+
+# vim: ai ts=2 sts=2 et sw=2 ft=ruby
+
+require 'natto'
+require_relative 'lib/Moeimg.rb'
+
+
+# SQLを実行して返すだけ
+def selectSql (query)
+  dbClient = Mysql2::Client.new(:host => '127.0.0.1', :port => 3306, :username => 'root', :password => 'database', :database => 'database')
+  result = Array.new
+  
+  raw_result = dbClient.query( query)
+
+  raw_result.each do |row|
+    row_result = Hash.new
+    row.each do |key,value|
+      row_result[ key.to_sym] = value
+    end
+    result << row_result
+  end
+
+  return result
+end
+
+wordList = Array.new
+result = selectSql(%q{SELECT title FROM post})
+nm = Natto::MeCab.new('-F%F,[0,1,2]')
+result.each do |row|
+  nm.parse(row[:title]) do |n|
+    if n.feature =~ /^名詞,(固有名詞|一般)/ then
+      puts "#{n.surface}\t#{n.feature}"
+    end
+  end
+end
